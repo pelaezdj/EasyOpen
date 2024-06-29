@@ -1,0 +1,82 @@
+#!/bin/bash
+
+function KeepFirst {
+	SedString="s/^\(.\{"$1"\}\).*/\1/"
+	sed $SedString
+}
+
+function KeepLast {
+	SedString="s/^.*\(.\{"$1"\}\)$/\1/"
+	sed $SedString
+}
+
+function RemoveFirst {
+	SedString="s/^.\{"$1"\}//"
+	sed $SedString
+}
+
+function RemoveLast {
+	SedString="s/.\{"$1"\}$//"
+	sed $SedString
+}
+
+VerboseScript="no"
+
+function VerboseEcho {
+	if [[ $VerboseScript == "yes" ]]; then
+		echo -e "$1"
+	fi
+}
+
+function VerboseRead {
+	if [[ $VerboseScript == "yes" ]]; then
+		read -e -p "Press ENTER to continue "
+		if [[ ! $REPLY == "" ]]; then
+			echo
+			echo Typing stuff like \"$REPLY\" won\'t change anything; fi
+		echo
+	fi
+}
+
+FileName="$1"
+Extension=""
+HasRealExtension="no"
+
+while [[ ! $FileName == "" && $HasRealExtension == "no" ]]; do
+
+	CurrentChar="$(echo $FileName | KeepLast 1)"
+	Extension="$CurrentChar$Extension"
+	FileName="$(echo $FileName | RemoveLast 1)"
+	
+	if [[ $CurrentChar == "." ]]; then
+		VerboseEcho "Dot/Period found!"
+		HasRealExtension="yes"
+	fi
+	
+	VerboseEcho "FileName: $FileName"
+	VerboseEcho "Extension: $Extension"
+	VerboseEcho "HasRealExtension: $HasRealExtension"
+	VerboseRead
+done
+
+VerboseEcho "Using \"$Extension\" as the extension.\n"
+
+FileName="$1"
+UserName="$(whoami)"
+
+if [[ $Extension == ".jpg" || $Extension == ".jpeg" || $Extension == ".bmp" || $Extension == ".png" ]]; then
+	feh -F -Z --start-at "$FileName"
+
+elif [[ $Extension == ".gif" ]]; then
+	#animate -loop 0 "$FileName"
+	#sxiv -a -b -f -s f "$FileName"
+	gifview -a "$FileName"
+
+elif [[ $Extension == ".loop" || $Extension == ".mp4" || $Extension == ".webm" || $Extension == ".mpg" || $Extension == ".avi" ]]; then
+	mpv -fs --loop "$FileName"
+
+elif [[ $Extension == ".txt" || $Extension == ".conf" || $Extension == ".conf2" || $Extension == ".conf3" || $Extension == ".cfg" ]]; then
+	gvim "$FileName"
+else
+	echo The \"open\" script is not configured to handle the \"$Extension\" extension.
+fi
